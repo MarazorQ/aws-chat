@@ -1,16 +1,10 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const {
-  DynamoDBDocumentClient,
-  PutCommand,
-  GetCommand,
-} = require("@aws-sdk/lib-dynamodb");
+const { PutCommand, GetCommand } = require("@aws-sdk/lib-dynamodb");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
 
 const { buildResponse } = require("./utils/buildResponse.js");
+const { dbClient } = require("./utils/dbClient.js");
 
-const client = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(client);
 const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 
 module.exports.handler = async (event) => {
@@ -18,7 +12,7 @@ module.exports.handler = async (event) => {
 
   const { email, password } = JSON.parse(body);
 
-  const isEmailAlreadyExist = await dynamo.send(
+  const isEmailAlreadyExist = await dbClient.send(
     new GetCommand({
       TableName: tableName,
       Key: {
@@ -33,7 +27,7 @@ module.exports.handler = async (event) => {
   const passwordSalt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, passwordSalt);
 
-  await dynamo.send(
+  await dbClient.send(
     new PutCommand({
       TableName: tableName,
       Item: {

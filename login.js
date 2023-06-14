@@ -1,12 +1,10 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, GetCommand } = require("@aws-sdk/lib-dynamodb");
+const { GetCommand } = require("@aws-sdk/lib-dynamodb");
 const bcrypt = require("bcryptjs");
 
 const { buildResponse } = require("./utils/buildResponse.js");
 const { generateToken } = require("./utils/jwt.js");
+const { dbClient } = require("./utils/dbClient.js");
 
-const client = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(client);
 const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 
 module.exports.handler = async (event) => {
@@ -14,7 +12,7 @@ module.exports.handler = async (event) => {
 
   const { email, password } = JSON.parse(body);
 
-  const isUserExist = await dynamo.send(
+  const isUserExist = await dbClient.send(
     new GetCommand({
       TableName: tableName,
       Key: {

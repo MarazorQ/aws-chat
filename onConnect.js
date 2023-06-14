@@ -1,15 +1,11 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const {
-  DynamoDBDocumentClient,
-  UpdateCommand,
-} = require("@aws-sdk/lib-dynamodb");
+const { UpdateCommand } = require("@aws-sdk/lib-dynamodb");
 
 const { buildResponse } = require("./utils/buildResponse.js");
 const { verifyToken } = require("./utils/jwt.js");
+const { dbClient } = require("./utils/dbClient.js");
+
 const { UserStatus } = require("./utils/constants.js");
 
-const client = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(client);
 const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 
 module.exports.handler = async (event) => {
@@ -22,7 +18,7 @@ module.exports.handler = async (event) => {
 
   const { email } = response;
 
-  await dynamo.send(
+  await dbClient.send(
     new UpdateCommand({
       TableName: tableName,
       Key: {
