@@ -1,0 +1,34 @@
+service: ws-chat-lambda
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  region: us-east-1
+  iam:
+    role:
+      statements: # permissions for all of your functions can be set here
+        - Effect: Allow
+          Action: # Gives permission to DynamoDB tables in a specific region
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: 'arn:xxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
+functions:
+  registration:
+    handler: registration.handler
+  login:
+    handler: login.handler
+  onConnect:
+    handler: onConnect.handler
+  onDisconnect:
+    handler: onDisconnect.handler
+
+plugins:
+  - serverless-offline
+  - serverless-offline-lambda
