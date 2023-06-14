@@ -2,8 +2,8 @@ const { PutCommand, GetCommand } = require("@aws-sdk/lib-dynamodb");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
 
-const { buildResponse } = require("./utils/buildResponse.js");
-const { dbClient } = require("./utils/dbClient.js");
+const { buildResponse } = require("../utils/buildResponse.js");
+const { dbClient } = require("../utils/dbClient.js");
 
 const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 

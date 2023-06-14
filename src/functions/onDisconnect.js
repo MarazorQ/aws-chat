@@ -1,9 +1,9 @@
 const { UpdateCommand, ScanCommand } = require("@aws-sdk/lib-dynamodb");
 
-const { buildResponse } = require("./utils/buildResponse.js");
-const { dbClient } = require("./utils/dbClient.js");
+const { buildResponse } = require("../utils/buildResponse.js");
+const { dbClient } = require("../utils/dbClient.js");
 
-const { UserStatus } = require("./utils/constants.js");
+const { UserStatus } = require("../utils/constants.js");
 
 const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 

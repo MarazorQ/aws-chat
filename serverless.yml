@@ -20,6 +20,9 @@ provider:
             - dynamodb:DeleteItem
           Resource: ${env:DYNAMO_USERS_TABLE_ARN}
 
+custom:
+  functionsBasePath: src/functions
+
 functions:
   registration:
     handler: registration.handler
@@ -43,3 +46,4 @@ functions:
 plugins:
   - serverless-offline
   - serverless-offline-lambda
+  - serverless-functions-base-path
