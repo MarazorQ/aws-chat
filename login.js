@@ -7,7 +7,7 @@ const { generateToken } = require("./utils/jwt.js");
 
 const client = new DynamoDBClient({});
 const dynamo = DynamoDBDocumentClient.from(client);
-const tableName = "AS_USERS";
+const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 
 module.exports.handler = async (event) => {
   const { body } = event;

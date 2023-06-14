@@ -1,4 +1,5 @@
 service: ws-chat-lambda
+useDotenv: true
 frameworkVersion: '3'
 
 provider:
@@ -17,17 +18,27 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
-          Resource: 'arn:xxxxxxxxxxxxxxxxxxxxxxxxxxx'
+          Resource: ${env:DYNAMO_USERS_TABLE_ARN}
 
 functions:
   registration:
     handler: registration.handler
+    environment:
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
   login:
     handler: login.handler
+    environment:
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+      JWT_SECRET: ${env:JWT_SECRET}
   onConnect:
     handler: onConnect.handler
+    environment:
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+      JWT_SECRET: ${env:JWT_SECRET}
   onDisconnect:
     handler: onDisconnect.handler
+    environment:
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
 
 plugins:
   - serverless-offline
