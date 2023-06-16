@@ -26,10 +26,30 @@ custom:
 functions:
   registration:
     handler: registration.handler
+    events:
+      - http:
+          path: registration
+          method: post
+          request:
+            schemas:
+              application/json:
+                schema: ${file(src/models/create_user_model.json)}
+                name: UserCreateModel
+                description: 'Validation model for Creating Users'
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
   login:
     handler: login.handler
+    events:
+      - http:
+          path: login
+          method: post
+          request:
+            schemas:
+              application/json:
+                schema: ${file(src/models/login_user_model.json)}
+                name: UserLoginModel
+                description: 'Validation model for Login Users'
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
       JWT_SECRET: ${env:JWT_SECRET}

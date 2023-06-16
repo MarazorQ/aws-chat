@@ -1,0 +1,16 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ValidateBody",
+    "required": ["email", "password"],
+    "type": "object",
+    "properties": {
+        "email": {
+            "type": "string",
+            "maxLength": 127
+        },
+        "password": {
+            "type": "string",
+            "maxLength": 20
+        }
+    }
+  }
