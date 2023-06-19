@@ -6,26 +6,33 @@ provider:
   name: aws
   runtime: nodejs16.x
   region: us-east-1
-  iam:
-    role:
-      statements: # permissions for all of your functions can be set here
-        - Effect: Allow
-          Action: # Gives permission to DynamoDB tables in a specific region
-            - dynamodb:DescribeTable
-            - dynamodb:Query
-            - dynamodb:Scan
-            - dynamodb:GetItem
-            - dynamodb:PutItem
-            - dynamodb:UpdateItem
-            - dynamodb:DeleteItem
-          Resource: ${env:DYNAMO_USERS_TABLE_ARN}
+  iamRoleStatements: # permissions for all of your functions can be set here
+    - Effect: Allow
+      Action: # Gives permission to DynamoDB tables in a specific region
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: ${env:DYNAMO_USERS_TABLE_ARN}
+    - Effect: Allow
+      Action: # Gives permission to Cognito in a specific region
+        - cognito-idp:AdminInitiateAuth
+        - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminGetUser
+        - cognito-idp:AdminSetUserPassword
+        - cognito-idp:DescribeUserPoolClien
+        - cognito-idp:AdminRespondToAuthChallenge
+      Resource: ${env:COGNITO_USERS_POOL_ARN}
 
 custom:
   functionsBasePath: src/functions
 
 functions:
   registration:
-    handler: registration.handler
+    handler: auth/registration.handler
     events:
       - http:
           path: registration
@@ -38,8 +45,65 @@ functions:
                 description: 'Validation model for Creating Users'
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+  confirmRegistration:
+    handler: auth/confirmRegistration.handler
+    events:
+      - http:
+          path: confirmRegistration
+          method: post
+          request:
+            schemas:
+              application/json:
+                schema: ${file(src/models/confirm_registration.json)}
+                name: UserConfirmRegistrationModel
+                description: 'Validation model for Confirm Registration Users'
+    environment:
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+  resendActivationCode:
+    handler: auth/resendActivationCode.handler
+    events:
+      - http:
+          path: resendActivationCode/{userId}
+          method: get
+          request:
+            parameters:
+              paths:
+                userId: true
+    environment:
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+      COGNITO_USERS_POOL_ID: ${env:COGNITO_USERS_POOL_ID}
+  forgotPassword:
+    handler: password-recovery/forgotPassword.handler
+    events:
+      - http:
+          path: forgotPassword
+          method: post
+          request:
+            schemas:
+              application/json:
+                schema: ${file(src/models/forgot_password.json)}
+                name: ForgotPasswordModel
+                description: 'Validation model for Forgot Password Users'
+    environment:
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+  confirmForgotPassword:
+    handler: password-recovery/confirmForgotPassword.handler
+    events:
+      - http:
+          path: confirmForgotPassword
+          method: post
+          request:
+            schemas:
+              application/json:
+                schema: ${file(src/models/confirm_forgot_password.json)}
+                name: ConfirmForgotPasswordModel
+                description: 'Validation model for Confirm Forgot Password Users'
+    environment:
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
   login:
-    handler: login.handler
+    handler: auth/login.handler
     events:
       - http:
           path: login
@@ -52,14 +116,21 @@ functions:
                 description: 'Validation model for Login Users'
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
       JWT_SECRET: ${env:JWT_SECRET}
   onConnect:
-    handler: onConnect.handler
+    handler: ws-events/onConnect.handler
+    events:
+      - websocket:
+          route: $connect
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
       JWT_SECRET: ${env:JWT_SECRET}
   onDisconnect:
-    handler: onDisconnect.handler
+    handler: ws-events/onDisconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
 

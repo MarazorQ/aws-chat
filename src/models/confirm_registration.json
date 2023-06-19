@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ValidateBody",
+    "required": ["activationCode", "userId"],
+    "type": "object",
+    "properties": {
+        "activationCode": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 6
+        },
+        "userId": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36
+        }
+    }
+  }
