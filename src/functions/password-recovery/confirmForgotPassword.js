@@ -4,6 +4,7 @@ const {
 } = require("@aws-sdk/client-cognito-identity-provider");
 
 const { buildResponse } = require("../../utils/buildResponse.js");
+const { HttpCodes } = require("../../utils/constants.js");
 
 module.exports.handler = async (event) => {
   const { body } = event;
@@ -22,8 +23,10 @@ module.exports.handler = async (event) => {
   try {
     await cognitoIdentityProviderClient.send(command);
 
-    return buildResponse(200, { message: "Success" });
+    return buildResponse(HttpCodes.SUCCESS, { message: "Success" });
   } catch (_) {
-    return buildResponse(200, { message: "Invalid request data!" });
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "Invalid request data!",
+    });
   }
 };

@@ -3,7 +3,7 @@ const { UpdateCommand, ScanCommand } = require("@aws-sdk/lib-dynamodb");
 const { buildResponse } = require("../../utils/buildResponse.js");
 const { dbClient } = require("../../utils/dbClient.js");
 
-const { UserStatus } = require("../../utils/constants.js");
+const { UserStatus, HttpCodes } = require("../../utils/constants.js");
 
 const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 
@@ -27,7 +27,7 @@ module.exports.handler = async (event) => {
     new UpdateCommand({
       TableName: tableName,
       Key: {
-        email: Items[0].email,
+        cognitoId: Items[0].cognitoId,
       },
       UpdateExpression: "SET connectionId = :connectionId, #st = :status",
       ExpressionAttributeValues: {
@@ -40,5 +40,5 @@ module.exports.handler = async (event) => {
     })
   );
 
-  return buildResponse(200, { message: "Success!" });
+  return buildResponse(HttpCodes.SUCCESS, { message: "Success!" });
 };

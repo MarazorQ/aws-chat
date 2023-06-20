@@ -4,6 +4,7 @@ const {
 } = require("@aws-sdk/client-cognito-identity-provider");
 
 const { buildResponse } = require("../../utils/buildResponse.js");
+const { HttpCodes } = require("../../utils/constants.js");
 
 module.exports.handler = async (event) => {
   const { body } = event;
@@ -21,8 +22,13 @@ module.exports.handler = async (event) => {
   try {
     const { UserSub } = await cognitoIdentityProviderClient.send(command);
 
-    return buildResponse(200, { message: "Success!", userId: UserSub });
+    return buildResponse(HttpCodes.SUCCESS, {
+      message: "Success!",
+      userId: UserSub,
+    });
   } catch (_) {
-    return buildResponse(400, { message: "User already exists!" });
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "User already exists!",
+    });
   }
 };

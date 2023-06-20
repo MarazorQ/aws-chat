@@ -4,6 +4,7 @@ const {
 } = require("@aws-sdk/client-cognito-identity-provider");
 
 const { buildResponse } = require("../../utils/buildResponse.js");
+const { HttpCodes } = require("../../utils/constants.js");
 
 module.exports.handler = async (event) => {
   const { body } = event;
@@ -26,8 +27,10 @@ module.exports.handler = async (event) => {
       AuthenticationResult: { AccessToken, RefreshToken, IdToken },
     } = await cognitoIdentityProviderClient.send(command);
 
-    return buildResponse(200, { token: AccessToken });
+    return buildResponse(HttpCodes.SUCCESS, { token: AccessToken });
   } catch (_) {
-    return buildResponse(200, { message: "Invalid password or login!" });
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "Invalid password or login!",
+    });
   }
 };

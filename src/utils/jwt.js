@@ -1,26 +1,23 @@
-const jwt = require("jsonwebtoken");
+const { CognitoJwtVerifier } = require("aws-jwt-verify");
 
-exports.generateToken = (userInfo) => {
-  if (!userInfo) {
-    return null;
-  }
-
-  return jwt.sign(userInfo, process.env.JWT_SECRET, {
-    expiresIn: "1h",
+module.exports.verifyToken = async (token) => {
+  const verifier = CognitoJwtVerifier.create({
+    userPoolId: process.env.COGNITO_USERS_POOL_ID,
+    tokenUse: "access",
+    clientId: process.env.COGNITO_CLIENT_ID,
   });
-};
 
-exports.verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET, (error, response) => {
-    if (error)
-      return {
-        verified: false,
-        response: null,
-      };
+  try {
+    const response = await verifier.verify(token);
 
     return {
       verified: true,
       response,
     };
-  });
+  } catch (_) {
+    return {
+      verified: false,
+      response: null,
+    };
+  }
 };

@@ -1,4 +1,4 @@
-const { PutCommand, GetCommand } = require("@aws-sdk/lib-dynamodb");
+const { PutCommand } = require("@aws-sdk/lib-dynamodb");
 const {
   CognitoIdentityProviderClient,
   ConfirmSignUpCommand,
@@ -6,6 +6,7 @@ const {
 
 const { buildResponse } = require("../../utils/buildResponse.js");
 const { dbClient } = require("../../utils/dbClient.js");
+const { UserStatus, HttpCodes } = require("../../utils/constants.js");
 
 const tableName = process.env.DYNAMO_USERS_TABLE_NAME;
 
@@ -25,8 +26,21 @@ module.exports.handler = async (event) => {
   try {
     await cognitoIdentityProviderClient.send(command);
 
-    return buildResponse(200, { message: "Success!" });
+    await dbClient.send(
+      new PutCommand({
+        TableName: tableName,
+        Item: {
+          cognitoId: userId,
+          connectionId: "",
+          status: UserStatus.OFFLINE,
+        },
+      })
+    );
+
+    return buildResponse(HttpCodes.SUCCESS, { message: "Success!" });
   } catch (_) {
-    return buildResponse(400, { message: "Invalid activation code!" });
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "Invalid activation code!",
+    });
   }
 };

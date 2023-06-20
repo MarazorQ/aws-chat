@@ -117,7 +117,6 @@ functions:
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
       COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
-      JWT_SECRET: ${env:JWT_SECRET}
   onConnect:
     handler: ws-events/onConnect.handler
     events:
@@ -125,7 +124,8 @@ functions:
           route: $connect
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
-      JWT_SECRET: ${env:JWT_SECRET}
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+      COGNITO_USERS_POOL_ID: ${env:COGNITO_USERS_POOL_ID}
   onDisconnect:
     handler: ws-events/onDisconnect.handler
     events:
