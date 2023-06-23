@@ -117,6 +117,20 @@ functions:
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
       COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+  createRoom:
+    handler: room/createRoom.handler
+    events:
+      - http:
+          path: room
+          method: post
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 30
+            identitySource: method.request.header.Authorization
+            type: token
+    environment:
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
   onConnect:
     handler: ws-events/onConnect.handler
     events:
@@ -133,6 +147,12 @@ functions:
           route: $disconnect
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+  authorizer:
+    handler: auth/authorizer.handler
+    environment:
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+      COGNITO_USERS_POOL_ID: ${env:COGNITO_USERS_POOL_ID}
+    description: ${self:service} authorizer
 
 plugins:
   - serverless-offline

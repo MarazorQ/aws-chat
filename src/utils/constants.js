@@ -8,3 +8,8 @@ exports.HttpCodes = {
   BAD_REQUEST: 400,
   UNAUTHORIZED: 403,
 };
+
+exports.Effects = {
+  ALLOW: "Allow",
+  DENY: "Deny",
+};
