@@ -16,7 +16,10 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: ${env:DYNAMO_USERS_TABLE_ARN}
+      Resource: 
+        - ${env:DYNAMO_USERS_TABLE_ARN}
+        - ${env:DYNAMO_CHAT_TABLE_ARN}
+        - ${env:DYNAMO_CHAT_TABLE_ARN}/index/*
     - Effect: Allow
       Action: # Gives permission to Cognito in a specific region
         - cognito-idp:AdminInitiateAuth
@@ -123,13 +126,39 @@ functions:
       - http:
           path: room
           method: post
+          request:
+            schemas:
+              application/json:
+                schema: ${file(src/models/create_room.json)}
+                name: CreateRoomModel
+                description: 'Validation model for Creating Rooms'
           authorizer:
             name: authorizer
             resultTtlInSeconds: 30
             identitySource: method.request.header.Authorization
             type: token
     environment:
-      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+      DYNAMO_CHAT_TABLE_NAME: ${env:DYNAMO_CHAT_TABLE_NAME}
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+  joinToRoom:
+    handler: room/joinToRoom.handler
+    events:
+      - http:
+          path: room/join
+          method: post
+          request:
+            schemas:
+              application/json:
+                schema: ${file(src/models/join_to_room.json)}
+                name: JoinToRoomModel
+                description: 'Validation model for Joining to Rooms'
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 30
+            identitySource: method.request.header.Authorization
+            type: token
+    environment:
+      DYNAMO_CHAT_TABLE_NAME: ${env:DYNAMO_CHAT_TABLE_NAME}
       COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
   onConnect:
     handler: ws-events/onConnect.handler

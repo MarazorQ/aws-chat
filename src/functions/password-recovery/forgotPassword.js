@@ -19,9 +19,11 @@ module.exports.handler = async (event) => {
   });
 
   try {
-    const response = await cognitoIdentityProviderClient.send(command);
+    await cognitoIdentityProviderClient.send(command);
 
-    return buildResponse(HttpCodes.SUCCESS, { response });
+    return buildResponse(HttpCodes.SUCCESS, {
+      message: "We have sent you a code by email",
+    });
   } catch (_) {
     return buildResponse(HttpCodes.BAD_REQUEST, {
       message: "Invalid request data!",
