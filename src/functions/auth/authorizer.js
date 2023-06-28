@@ -1,5 +1,5 @@
 const { verifyToken } = require("../../utils/jwt.js");
-const { Effects } = require("../../utils/constants.js");
+const { Effects, AuthorizerTypes } = require("../../utils/constants.js");
 
 const generatePolicy = (effect, resource) => ({
   Version: "2012-10-17",
@@ -13,9 +13,13 @@ const generatePolicy = (effect, resource) => ({
 });
 
 module.exports.handler = async (event, context, callback) => {
-  const { queryStringParameters, authorizationToken, methodArn } = event;
+  const { queryStringParameters, authorizationToken, methodArn, type } = event;
 
-  const token = authorizationToken.split(" ")[1];
+  const token = (
+    type === AuthorizerTypes.REQUEST
+      ? queryStringParameters.Auth
+      : authorizationToken
+  ).split(" ")[1];
 
   if (!token) callback("Unauthorized");
 

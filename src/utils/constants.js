@@ -16,9 +16,16 @@ exports.Effects = {
   DENY: "Deny",
 };
 
+exports.AuthorizerTypes = {
+  TOKEN: "TOKEN",
+  REQUEST: "REQUEST",
+};
+
 exports.DBKeyPrefix = {
   ROOM: (item) => `ROOM#${item}`,
   CONFIG: "CONFIG",
   USER: (item) => `USER#${item}`,
   MESSAGE: (item) => `MESSAGE#${item}`,
 };
+
+exports.ApiGatewayVersion = "2018-11-29";

@@ -165,6 +165,10 @@ functions:
     events:
       - websocket:
           route: $connect
+          authorizer:
+            name: authorizer
+            identitySource:
+              - 'route.request.querystring.Auth'
     environment:
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
       COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
@@ -175,6 +179,14 @@ functions:
       - websocket:
           route: $disconnect
     environment:
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+  onSendMessage:
+    handler: ws-events/onSendMessage.handler
+    events:
+      - websocket:
+          route: sendMessage
+    environment:
+      DYNAMO_CHAT_TABLE_NAME: ${env:DYNAMO_CHAT_TABLE_NAME}
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
   authorizer:
     handler: auth/authorizer.handler
