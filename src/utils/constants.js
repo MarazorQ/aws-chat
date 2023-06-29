@@ -29,3 +29,15 @@ exports.DBKeyPrefix = {
 };
 
 exports.ApiGatewayVersion = "2018-11-29";
+
+exports.MessageMaxLength = 255;
+exports.MessageMaxCountForRead = 10;
+exports.MessageMaxCountForDelete = 10;
+exports.MessageMaxHoursForUpdate = 24;
+
+exports.WSEvents = {
+  SEND_MESSAGE: "sendMessage",
+  READ_MESSAGE: "readMessage",
+  DELETE_MESSAGE: "deleteMessage",
+  UPDATE_MESSAGE: "updateMessage",
+};

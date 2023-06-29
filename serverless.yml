@@ -16,6 +16,7 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
+        - dynamodb:BatchGetItem
       Resource: 
         - ${env:DYNAMO_USERS_TABLE_ARN}
         - ${env:DYNAMO_CHAT_TABLE_ARN}
@@ -188,6 +189,30 @@ functions:
     environment:
       DYNAMO_CHAT_TABLE_NAME: ${env:DYNAMO_CHAT_TABLE_NAME}
       DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+  onDeleteMessage:
+    handler: ws-events/onDeleteMessage.handler
+    events:
+      - websocket:
+          route: deleteMessage
+    environment:
+      DYNAMO_CHAT_TABLE_NAME: ${env:DYNAMO_CHAT_TABLE_NAME}
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+  onReadMessage:
+    handler: ws-events/onReadMessage.handler
+    events:
+      - websocket:
+          route: readMessage
+    environment:
+      DYNAMO_CHAT_TABLE_NAME: ${env:DYNAMO_CHAT_TABLE_NAME}
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}
+  onUpdateMessage:
+    handler: ws-events/onUpdateMessage.handler
+    events:
+      - websocket:
+          route: updateMessage
+    environment:
+      DYNAMO_CHAT_TABLE_NAME: ${env:DYNAMO_CHAT_TABLE_NAME}
+      DYNAMO_USERS_TABLE_NAME: ${env:DYNAMO_USERS_TABLE_NAME}    
   authorizer:
     handler: auth/authorizer.handler
     environment:

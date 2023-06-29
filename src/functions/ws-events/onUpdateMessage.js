@@ -1,12 +1,11 @@
 const {
   QueryCommand,
   GetCommand,
-  PutCommand,
+  UpdateCommand,
 } = require("@aws-sdk/lib-dynamodb");
 const {
   PostToConnectionCommand,
 } = require("@aws-sdk/client-apigatewaymanagementapi");
-const KSUID = require("ksuid");
 
 const { buildResponse } = require("../../utils/buildResponse.js");
 const { dbClient } = require("../../utils/dbClient.js");
@@ -14,10 +13,10 @@ const { apiGatewayClient } = require("../../utils/apiGatewayClient.js");
 
 const {
   HttpCodes,
-  DBKeyPrefix,
   UserStatus,
-  MessageMaxLength,
   WSEvents,
+  MessageMaxLength,
+  MessageMaxHoursForUpdate,
 } = require("../../utils/constants.js");
 
 const chatTableName = process.env.DYNAMO_CHAT_TABLE_NAME;
@@ -34,10 +33,10 @@ module.exports.handler = async (event) => {
   } = event;
 
   const {
-    data: { message, roomId },
+    data: { messageId, message, roomId },
   } = JSON.parse(body);
 
-  if (!message || !roomId)
+  if (!messageId || !roomId || !message)
     return buildResponse(HttpCodes.BAD_REQUEST, {
       message: "Invalid request data!",
     });
@@ -49,25 +48,58 @@ module.exports.handler = async (event) => {
 
   const userId = principalId.split(" ")[0];
 
-  const ksuidFromAsync = (await KSUID.random()).string;
-
-  const putMessageCommand = new PutCommand({
+  const getCommand = new GetCommand({
     TableName: chatTableName,
-    Item: {
-      PK: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-      SK: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-      GSI1PK: roomId,
-      GSI1SK: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-      createdAt: new Date().toISOString(),
-      message: message,
-      roomId,
-      userId,
-      isRead: false,
-      type: "message",
+    Key: {
+      PK: messageId,
+      SK: messageId,
+    },
+    ProjectionExpression: "userId, message, createdAt",
+  });
+
+  const isMessageExist = await dbClient.send(getCommand);
+
+  if (!isMessageExist.Item)
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "Message Not Found",
+    });
+
+  if (isMessageExist.Item.userId !== userId)
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "You are not message author!",
+    });
+
+  if (isMessageExist.Item.message === message)
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "The same data!",
+    });
+
+  //36e5 = 60 * 60 * 1000
+  const differenceBetweenTwoDates =
+    Math.abs(
+      new Date(new Date().toISOString()) -
+        new Date(isMessageExist.Item.createdAt)
+    ) / 36e5;
+
+  if (differenceBetweenTwoDates >= MessageMaxHoursForUpdate)
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "Expire!",
+    });
+
+  const updateMessageCommand = new UpdateCommand({
+    TableName: chatTableName,
+    Key: {
+      PK: messageId,
+      SK: messageId,
+    },
+    UpdateExpression: "SET message = :message, isUpdated = :isUpdated",
+    ExpressionAttributeValues: {
+      ":message": message,
+      ":isUpdated": true,
     },
   });
 
-  await dbClient.send(putMessageCommand);
+  await dbClient.send(updateMessageCommand);
 
   const queryCommandByGSI1 = new QueryCommand({
     TableName: chatTableName,
@@ -114,11 +146,10 @@ module.exports.handler = async (event) => {
           if (item.status === UserStatus.ONLINE) {
             const messageData = {
               roomId,
+              messageId,
               message,
-              userId,
-              isRead: false,
-              id: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-              event: WSEvents.SEND_MESSAGE,
+              isUpdated: true,
+              event: WSEvents.UPDATE_MESSAGE,
             };
 
             const postToConnectionCommand = new PostToConnectionCommand({

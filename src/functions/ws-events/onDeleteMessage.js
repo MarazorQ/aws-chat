@@ -1,12 +1,12 @@
 const {
   QueryCommand,
   GetCommand,
-  PutCommand,
+  TransactWriteCommand,
+  BatchGetCommand,
 } = require("@aws-sdk/lib-dynamodb");
 const {
   PostToConnectionCommand,
 } = require("@aws-sdk/client-apigatewaymanagementapi");
-const KSUID = require("ksuid");
 
 const { buildResponse } = require("../../utils/buildResponse.js");
 const { dbClient } = require("../../utils/dbClient.js");
@@ -14,10 +14,9 @@ const { apiGatewayClient } = require("../../utils/apiGatewayClient.js");
 
 const {
   HttpCodes,
-  DBKeyPrefix,
   UserStatus,
-  MessageMaxLength,
   WSEvents,
+  MessageMaxCountForDelete,
 } = require("../../utils/constants.js");
 
 const chatTableName = process.env.DYNAMO_CHAT_TABLE_NAME;
@@ -34,40 +33,56 @@ module.exports.handler = async (event) => {
   } = event;
 
   const {
-    data: { message, roomId },
+    data: { messageIds, roomId },
   } = JSON.parse(body);
 
-  if (!message || !roomId)
+  if (!messageIds || !roomId)
     return buildResponse(HttpCodes.BAD_REQUEST, {
       message: "Invalid request data!",
     });
 
-  if (!message?.length || message?.length > MessageMaxLength)
+  if (!messageIds?.length || messageIds?.length > MessageMaxCountForDelete)
     return buildResponse(HttpCodes.BAD_REQUEST, {
       message: "Invalid request data!",
     });
 
   const userId = principalId.split(" ")[0];
 
-  const ksuidFromAsync = (await KSUID.random()).string;
-
-  const putMessageCommand = new PutCommand({
-    TableName: chatTableName,
-    Item: {
-      PK: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-      SK: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-      GSI1PK: roomId,
-      GSI1SK: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-      createdAt: new Date().toISOString(),
-      message: message,
-      roomId,
-      userId,
-      isRead: false,
-      type: "message",
+  const batchGetCommand = new BatchGetCommand({
+    RequestItems: {
+      [chatTableName]: {
+        Keys: messageIds.map((id) => ({ PK: id, SK: id })),
+        ProjectionExpression: "userId, PK",
+      },
     },
   });
 
-  await dbClient.send(putMessageCommand);
+  const { Responses } = await dbClient.send(batchGetCommand);
+
+  const isNotMessageAuthor = Responses[chatTableName].filter(
+    (item) => item.userId !== userId
+  );
+
+  if (isNotMessageAuthor.length)
+    return buildResponse(HttpCodes.BAD_REQUEST, {
+      message: "You are not message author!",
+    });
+
+  const deleteMessageCommands = messageIds.map((messageId) => ({
+    Delete: {
+      TableName: chatTableName,
+      Key: {
+        PK: messageId,
+        SK: messageId,
+      },
+    },
+  }));
+
+  const transactWriteCommand = new TransactWriteCommand({
+    TransactItems: deleteMessageCommands,
+  });
+
+  await dbClient.send(transactWriteCommand);
 
   const queryCommandByGSI1 = new QueryCommand({
     TableName: chatTableName,
@@ -114,11 +129,8 @@ module.exports.handler = async (event) => {
           if (item.status === UserStatus.ONLINE) {
             const messageData = {
               roomId,
-              message,
-              userId,
-              isRead: false,
-              id: DBKeyPrefix.MESSAGE(ksuidFromAsync),
-              event: WSEvents.SEND_MESSAGE,
+              messageIds,
+              event: WSEvents.DELETE_MESSAGE,
             };
 
             const postToConnectionCommand = new PostToConnectionCommand({
